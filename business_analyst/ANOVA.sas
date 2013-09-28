@@ -59,9 +59,27 @@ run;
 quit; 
 
 /*Detect and analyze interactions between factors*/
+
+/*To test for interaction, plot the means, grouping the two factors*/
+/*Then use SG Plot.  Parallel lines indicate no interaction.*/
+proc means data=sasuser.drug            
+	mean var std nway;    
+	class Disease DrugDose;    
+	var BloodP;    
+	output out=means mean=BloodP_Mean;    
+	title 'Selected Descriptive Statistics for Drug Data Set'; 
+run; 
 proc sgplot data=means;    
 	series x=DrugDose y=BloodP_Mean / group=Disease markers;    
 	xaxis integer;    
 	title 'Plot of Stratified Means in Drug Data Set';    
-	format DrugDose dosefmt.; 
 run; 
+
+/*If a interaction is detected, we include it in the model when we run PROC GLM*/
+proc glm data=sasuser.drug order=internal;    
+	class DrugDose Disease;    
+	model Bloodp=DrugDose Disease DrugDose*Disease;    
+	title 'Analyze the Effects of DrugDose and Disease';    
+	title2 'Including Interaction';    
+run; 
+quit; 
