@@ -1,65 +1,55 @@
-/**************************************	ANOVA ******************************************/
-	/*Verify the assumptions of ANOVA*/
-		/*Independence of Errors*/
-			/*Good data collection designs help ensure the independence assumption. */
-		/*Homogeneity of Variance among groups: 
-			Use HOVTEST option to perform Levene?s test for homogeneity of variances. 
-			The null hypothesis for this test is that the variances are equal. 
-			Levene?s test is the default. */
-		/*Errors are normally distributed*/
-			/*Q-Q Plot*/
-proc glm data=sasuser.MGGarlic plots(only)=diagnostics;    
-	class Fertilizer;    
-	model BulbWt=Fertilizer;    
-	means Fertilizer / hovtest;    
-	title 'Testing for ANOVA Assuptions with PROC GLM'; 
-	title2 'Check Q-Q plot for normal distribution of errors';
-	title3 "Check Levene's HOV test for homogeneity of variance.  Null hypothesis is equal variances.";
-run; 
-quit; 
-
-	/*Analyze differences between population means using the GLM and TTEST procedures*/
-	/*In this case, the p-value is too high - not enough evidence to reject the null hypothesis*/
-proc glm data=sasuser.MGGarlic;    
-	class Fertilizer;    
-	model BulbWt=Fertilizer;    
-	title 'Analyze differences between population means using the GLM procedure'; 
-run; 
-quit; 
-
-	/* HOV test P-value is above .05, so we do not reject the null hypothesis of equal variances.	*/
-	/* Q-Q Plot shows ~ normal */
-proc ttest data=sasuser.German plots(shownull)=interval;    
-	class Group;    
-	var Change;    
-	title "Analyze differences between population means using the TTEST procedure"; 
-run;
-quit; 
-	/*Perform ANOVA post hoc test to evaluate treatment effect*/
-	/*Detect and analyze interactions between factors*/
-
-/********************             Linear Regression 			***********************/
-	/*Fit a multiple linear regression model using the REG and GLM procedures*/
-	/*Analyze the output of the REG procedure for multiple linear regression models*/
-	/*Use the REG procedure to perform model selection*/
-	/*Assess the validity of a given regression model through the use of diagnostic and residual analysis*/
-
-/********************             Logistic Regression			************************/
-	/*Perform logistic regression with the LOGISTIC procedure*/
-	/*Optimize model performance through input selection*/
-	/*Interpret the output of the LOGISTIC procedure*/
-	/*Score new data sets using the LOGISTIC and SCORE procedures*/
-	/*Prepare Inputs for Predictive Model Performance*/
-
-/*************       Identify potential problems with input data ************************/
-	/*Use the DATA step to manipulate data with loops, arrays, conditional statements and functions*/
-	/*Reduce the number of categorical levels in a predictive model*/
-	/*Screen variables for irrelevance using the CORR procedure*/
-	/*Screen variables for non-linearity using empirical logit plots*/
-
 /*******************              Measure Model Performance      ***********************/
 	/*Apply the principles of honest assessment to model performance measurement*/
+		/*Section 4.1 in Predictive Modeling Using Logistic Regression */
+/*			Overfitting is likely to be a problem with a small dataset and a flexible model*/
+/*			Basic procedure for avoiding overfitting:*/
+/*				Split data into training and validation*/
+/*				Create model using training data*/
+/*				Select best model using validation data set*/
+/*				Once model is selected, refit with entire data set to get final values for coefficients */
+/*			v-fold cross-validation:*/
+/*				Time-consuming, but all data is used for both validation and assessment*/
+/*				Good if you don't have a ton of data.*/
+/*				Split data into v equal subsets.  */
+/*				Do v model selections, using each subset as the holdout*/
+/*				Average the resulting models*/
+/*			Data can be split using PROC SURVEYSELECT*/
+				 
 	/*Assess classifier performance using the confusion matrix*/
+		/*Section 4.2 in Predictive Modeling Using Logistic Regression */
+			/* Confusing matrix is a 2X2 chart:
+								Predicted	
+							0			1		
+				Actual	0	True Neg	False Pos
+						1	False Neg	True Pos
+			*/
+			/*Accuracy: True Pos & Neg / Number of cases*/
+			/*Missclassficiation: False Pos & False Neg / Number of Cases*/
+			/*Sensitivity: True Pos / Predicted Pos*/
+			/*Specificity: True Neg / Predicted Neg*/
+			/*PV+: True Positives / Predicted Positives*/
+			/*Depth: The depth of a classification rule is the total proportion of cases 
+			that were allocated to class 1.*/
 	/*Model selection and validation using training and validation data*/
 	/*Create and interpret graphs (ROC, lift, and gains charts) for model comparison and selection*/
+	/*Gain chart: 
+		Graph of PV+ with Depth.  
+		When cuttoff is high, depth is low and PV+ should be high.
+		When cuttoff is low, model predicts lots of positives, so depth is high and PV+ should
+		approach */
+
+/*NOTE: Need a libname before this will run*/
+proc logistic data=Logistic.penalty;
+	class culp(param=ref ref='5');
+	model death(event='1') = blackd whitvic culp /outroc=ROC;
+	ROC 'Omit Culpability' blackd whitvic;
+	ROC 'Omit Defendant Race' whitvic culp;
+	ROC 'Omit Victim Race' blackd culp;
+	ROCcontrast / estimate=allpairs;
+	title 'Comparing ROC Curves';
+run;
+
 	/*Establish effective decision cut-off values for scoring*/
+/*		In order to choose a cut-off, we needs a decision criteria to know how*/
+/*		to balance sensitivity and specificity.*/
+/*		Bayes's rule chooses optimal cuttoff if you assign costs to false negatives and positives*/
